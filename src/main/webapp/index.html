@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Claro - Azure DevOps CI/CD - Gitlab 5.0</title>
+    <link rel='stylesheet' href='./css/bulma.min.css'>
+    <link rel='stylesheet' href="./css/prism.css">
+    <link rel="stylesheet" href="./css/cheatsheet.css">
+    <style>
+        .p-10-0 {
+            padding: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="hero is-primary">
+        <div class="hero-body">
+            <div class="columns">
+                <div class="column is-12">
+                    <div class="container content">
+                        <figure>
+                            <img src="./images/Claro-black.png" style="height: 98px;">
+                            <!--<img src="./images/Claro-White.png" style="height: 98px;">-->
+                        </figure>
+                        <h1 class="title">
+                            Validador <em>NIT-GT </em>
+                        </h1>
+                        <h3 class="subtitle">
+                            Prueba Azure DevOps
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-12">
+                    <div class="content is-medium">
+                        <h3 class="title is-3">Metodos </h3>
+                        <div class="box">
+                            <div id="root-nit"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        window.addEventListener('resize', () => {
+            const divs = document.querySelectorAll(".menu-list");
+            if (window.innerWidth < 768) {
+                divs.forEach(div => div.classList.add("tags"));
+            }
+            else {
+                divs.forEach(div => div.classList.remove("tags"));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+                const $notification = $delete.parentNode;
+
+                $delete.addEventListener('click', () => {
+                    $notification.parentNode.removeChild($notification);
+                });
+            });
+        });
+    </script>
+    <script src="./js/babel.min.js"></script>
+    <script src="./js/react.development.js"></script>
+    <script src="./js/react-dom.development.js"></script>
+    <script type="text/babel">
+
+
+
+        const Notify = (props) => {
+            if (props.statusData == 1) { //success
+                return (<div className="p-10-0">
+                    <div className="notification is-primary is-light">
+                        <button className="delete"></button>
+        Nit  <strong>{props.nitData}</strong>   es valido
+    </div>
+                </div>);
+            } else if (props.statusData == 2) { //Err
+                return (<div className="p-10-0">
+                    <div className="notification is-danger is-light" >
+                        <button className="delete"></button>
+        Nit  <strong>{props.nitData}</strong>   no es valido
+    </div>
+                </div>);
+            } else {
+                return null
+            }
+        }
+
+
+        const Progress = (props) => {
+            if (props.loadingStatusData) { //success
+                return (
+                    <div className="p-10-0">
+                        <progress className="progress is-danger" max="100">30%</progress>
+                    </div>
+                );
+            } else {
+                return <div></div>
+            }
+        }
+
+
+        class App extends React.Component {
+
+            initialState = {
+                nit: '',
+                nitConsulted: '',
+                loading: false,
+                status: 0
+            }
+
+            state = this.initialState;
+
+            handleChangeNit = (event) => {
+                const { name, value } = event.target;
+                this.setState({
+                    [name]: value.toUpperCase(),
+                })
+            }
+
+            handleSubmit = (event) => {
+                event.preventDefault();
+                this.validateNit();
+            }
+
+            validateNit() {
+                const nitConsulted = this.state.nit;
+                this.setState({
+                    nit: this.state.nit,
+                    nitConsulted: '',
+                    loading: true,
+                    status: 0
+                });
+                const url =
+                    'webresources/validaNits'
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    cache: 'no-cache',
+                    body: JSON.stringify({
+                        validarNit: {
+                            nit: this.state.nit
+                        }
+                    }),
+
+                })
+                    .then((result) => result.json())
+                    .then((result) => {
+                        if (result && result.res && result.res.includes('incorrecto')) {
+                            this.setState({
+                                nit: '',
+                                nitConsulted: nitConsulted,
+                                loading: false,
+                                status: 2
+                            });
+                        } else {
+                            this.setState({
+                                nit: '',
+                                nitConsulted: nitConsulted,
+                                loading: false,
+                                status: 1
+                            });
+                        }
+                    }).catch(err => {
+                        this.setState({
+                            nit: '',
+                            nitConsulted: nitConsulted,
+                            loading: false,
+                            status: 2
+                        });
+                    });
+            }
+
+            render() {
+                const { status, nit, loading, nitConsulted } = this.state;
+                return (
+                    <div>
+                        <h4 id="const" className="title is-4">Nit</h4>
+                        <div className="notification is-info is-light"> Ingrese un numero de nit para su verificación... </div>
+                        <form onSubmit={this.handleSubmit}>
+                            <div className="field">
+                                <div className="control">
+                                    <input className="input" type="text" placeholder="Ingrese Nit" id="nit" name="nit" value={nit} onChange={this.handleChangeNit.bind(this)} disabled={loading} />
+                                </div>
+                            </div>
+                            <div className="buttons">
+                                <input type="submit" value="Consultar" className="button is-success" disabled={loading} />
+                            </div>
+                        </form>
+                        <Progress loadingStatusData={loading} />
+                        <Notify statusData={status} nitData={nitConsulted} />
+                    </div>
+                )
+            }
+        }
+        ReactDOM.render(<App />, document.getElementById('root-nit'))
+    </script>
+
+
+</body>
+
+</html>
